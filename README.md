@@ -11,7 +11,7 @@ from 1, 2, …, M). Each class associated with a subject is called a class-subje
 
 • Each subject m has the number of periods d(m)
 
-• Each teacher has a list of subjects he or she can teach
+• Each teacher has a list of subjects that he or she can teach
 
 • Each session is divided into 5 periods
 

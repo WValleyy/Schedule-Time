@@ -26,6 +26,9 @@ There are 5 school days a week, from Monday to Friday, each day has two sessions
 
 # Input
 • Line 1: T (number of teachers), N (number of classes), M (number of subjects)
+
 • Line i+1 (i = 1,…, N):  enumerate the subjects that class i needs to learn (ended by 0)
+
 • The t + N + 1 line (t = 1,2,.., T): list the subjects that the teacher t can teach (ends with 0)
+
 • Nth line + T + 2: write d(m) as the number of periods of subject m (m = 1,…, M)

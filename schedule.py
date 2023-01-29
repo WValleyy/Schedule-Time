@@ -92,7 +92,7 @@ for c in class_sub:
 solver = cp_model.CpSolver()
 solver.parameters.linearization_level = 0
 solver.parameters.enumerate_all_solutions = True
-
+'''
 #Solution Printer
 class SolutionPrinterClass(cp_model.CpSolverSolutionCallback):
     def __init__(self, Schedule, teacher, class_sub, Session, Period,limit):
@@ -170,8 +170,11 @@ if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
     print()
 else:
     print('No solution found.')
-'''
 
+print('\nStatistics')
+print('  - conflicts      : %i' % solver.NumConflicts())
+print('  - branches       : %i' % solver.NumBranches())
+print('  - wall time      : %f s' % solver.WallTime())
 
 '''
 3 3 8

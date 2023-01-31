@@ -1,5 +1,6 @@
 from ortools.sat.python import cp_model
 # Create input
+import time
 
 teacher= {}
 class_sub = {}
@@ -76,7 +77,7 @@ for c in class_sub:
         model.Add(sum(Schedule[(t, c, sub, p, s)] 
         for s in range(1, Session+1) for p in range(1, Period+1)
         for t in teacher if sub in teacher[t]) == period_sub[sub-1])
-
+'''
 # Each class-sub need to be teach by exactly 1 teacher
 for c in class_sub:
     subject = class_sub[c]
@@ -88,10 +89,11 @@ for c in class_sub:
                 for s in range(1, Session+1) for p in range(1, Period+1)) == 0).OnlyEnforceIf(teach.Not())
                 model.Add(sum(Schedule[(t, c, sub, p, s)] 
                 for s in range(1, Session+1) for p in range(1, Period+1)) == period_sub[sub-1] ).OnlyEnforceIf(teach)
-
+'''
 solver = cp_model.CpSolver()
 solver.parameters.linearization_level = 0
 solver.parameters.enumerate_all_solutions = True
+
 '''
 #Solution Printer
 class SolutionPrinterClass(cp_model.CpSolverSolutionCallback):
@@ -148,10 +150,13 @@ print('  - solutions found: %i' % solution_printer._solution_count())
 
 # Solver
 solver = cp_model.CpSolver()
+start_time = time.time()
 status = solver.Solve(model)
+end_time = time.time()
 if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
     for s in range(1, Session+1):
                 print('Session ' + str(s))
+                print('-'*70)
                 for t in teacher:
                     
                     for c in class_sub:
@@ -163,8 +168,10 @@ if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
                     
                                 if solver.Value(Schedule[(t, c, sub, p, s)]):
                                     
+                                    
                                     print('Teacher ' + str(t) + ' teach class ' +
                                           str(c) + ' the subject ' + str(sub) + ' at period ' + str(p))
+                print('-'*70)
                                     
                     
     print()
@@ -176,6 +183,9 @@ print('  - conflicts      : %i' % solver.NumConflicts())
 print('  - branches       : %i' % solver.NumBranches())
 print('  - wall time      : %f s' % solver.WallTime())
 
+elapsed_time = end_time - start_time
+print('-'*70)
+print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
 '''
 3 3 8
 1 2 3 4 5 6 7 8 0

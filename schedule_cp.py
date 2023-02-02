@@ -1,6 +1,5 @@
 from ortools.sat.python import cp_model
 # Create input
-import time
 
 teacher= {}
 class_sub = {}
@@ -14,17 +13,12 @@ with open('data.txt', "r") as f:
     for j in range(N+1, T+N+1):
         teacher[j-N] = set(map(int,lines[j].split()[:-1]))
     period_sub = list(map(int,lines[T+N+1].split()))
-
-'''
-print(class_sub)
-print(teacher_sub)
-print(period_sub)
-'''
+period_sub.insert(0,0)
 
 # Modelling
 
 model = cp_model.CpModel()
-Period = 5
+Period = 6
 Session = 10
 
 # Creates Schedule variables.
@@ -36,6 +30,7 @@ for t in teacher:
         for p in range (1, Period+1):
             for s in range (1, Session+1):
                 for sub in subject:
+
                     Schedule[(t,c,sub,p,s)] = model.NewBoolVar(f'Schedule {t} {c} {sub} {p} {s}')
 
 # Create constraints
@@ -50,149 +45,118 @@ for t in teacher:
  
                     model.Add(sub_teach in subject).OnlyEnforceIf(Schedule[(t, c, sub_teach, p, s)])
 
-'''
-# Teacher can teach max 5 period in a session : dont need because we create the constraint below
-for t in teacher:
-    for s in range(1, Session+1):
-        model.Add(sum(Schedule[(t, c, sub, p, s)] for c in class_teacher_can_teach[t]
-        for p in range(1, Period+1) for sub in teacher[t]) <= Period)
-'''
 
 # Each teacher teach atmost one class in 1 period
 for t in teacher:
     for s in range(1, Session+1):
         for p in range(1, Period+1):
+
             model.AddAtMostOne(Schedule[(t, c, sub, p, s)]  for sub in teacher[t] for c in class_sub if sub in class_sub[c] )
 
 # Each class can learn atmost one subject in 1 period
 for c in class_sub:
     for s in range(1, Session+1):
         for p in range(1, Period+1):
+
             model.AddAtMostOne(Schedule[(t, c, sub, p, s)] for sub in class_sub[c] for t in teacher if sub in teacher[t])
 
-# Each class learn full of period of the subjects
+# Each class learn exactly periods of the cla-subjects
 for c in class_sub:
     subject = class_sub[c]
-    for sub in subject:                
+    for sub in subject:
+                        
         model.Add(sum(Schedule[(t, c, sub, p, s)] 
         for s in range(1, Session+1) for p in range(1, Period+1)
-        for t in teacher if sub in teacher[t]) == period_sub[sub-1])
-'''
+        for t in teacher if sub in teacher[t]) <= period_sub[sub])
+
 # Each class-sub need to be teach by exactly 1 teacher
 for c in class_sub:
     subject = class_sub[c]
     for sub in subject:
         for t in teacher:
             teach = model.NewBoolVar('t')
-            if sub in teacher[t]:
-                model.Add(sum(Schedule[(t, c, sub, p, s)] 
-                for s in range(1, Session+1) for p in range(1, Period+1)) == 0).OnlyEnforceIf(teach.Not())
-                model.Add(sum(Schedule[(t, c, sub, p, s)] 
-                for s in range(1, Session+1) for p in range(1, Period+1)) == period_sub[sub-1] ).OnlyEnforceIf(teach)
-'''
-solver = cp_model.CpSolver()
-solver.parameters.linearization_level = 0
-solver.parameters.enumerate_all_solutions = True
+            tea = teacher[t]
+            if sub in tea:
+                sub_pe = sum(Schedule[(t, c, sub, p, s)] 
+                for s in range(1, Session+1) for p in range(1, Period+1))
 
-'''
-#Solution Printer
-class SolutionPrinterClass(cp_model.CpSolverSolutionCallback):
-    def __init__(self, Schedule, teacher, class_sub, Session, Period,limit):
-        cp_model.CpSolverSolutionCallback.__init__(self)
-        self.Schedule = Schedule
-        self.teacher = teacher
-        self.class_sub = class_sub
-        self.Session = Session
-        self.Period = Period
-        self.solution_count = 0
-        self.solution_limit = limit
-    def on_solution_callback(self):
-            self.solution_count += 1
-            print('Solution %i' % self.solution_count)
-            for s in range(1, self.Session+1):
-                print('Session ' + str(s))
-                for t in self.teacher:
-                    
-                    for c in self.class_sub:
-                        
-                        for sub in self.teacher[t]:
-                
-                            for p in range(1, self.Period + 1):
-                        
-                    
-                                if self.Value(self.Schedule[(t, c, sub, p, s)]):
-                                    
-                                    print('Teacher ' + str(t) + ' teach class ' +
-                                          str(c) + ' the subject ' + str(sub) + ' at period ' + str(p))
-                                    
+                model.Add(sub_pe == 0).OnlyEnforceIf(teach.Not())
 
-            
-            if self.solution_count >= self.solution_limit:
-                print('Stop search after %i solutions' % self.solution_count)
-                self.StopSearch()
-            
+                model.Add(sub_pe == period_sub[sub] ).OnlyEnforceIf(teach)
 
-    def _solution_count(self):
-        return self.solution_count
+# The periods of the class-subject must be adjacent
+for s in range(1, Session + 1):   
+    for c in class_sub:
+        subject = class_sub[c]
+        for sub in subject:     
+            pe = period_sub[sub]  
+            for t in teacher:
+                if sub in teacher[t]:
+                    for p in range(1,Period+2-pe):
+                        if p == 1:
 
-solution_limit = 1
-solution_printer = SolutionPrinterClass(Schedule, teacher, class_sub, Session, Period,solution_limit)
-solver.Solve(model,solution_printer)
+                            model.Add(sum(Schedule[(t, c, sub, p_, s)]
+                            for p_ in range(p,p+pe)) == pe).OnlyEnforceIf(Schedule[(t, c, sub, p, s)]) 
 
-# Statistics.
-print('\nStatistics')
-print('  - conflicts      : %i' % solver.NumConflicts())
-print('  - branches       : %i' % solver.NumBranches())
-print('  - wall time      : %f s' % solver.WallTime())
-print('  - solutions found: %i' % solution_printer._solution_count())
+                        else:    
 
-'''
+                            model.Add(sum(Schedule[(t, c, sub, p_, s)] 
+                            for p_ in range(p,p+pe)) == pe).OnlyEnforceIf(Schedule[(t, c, sub, p, s)],Schedule[(t, c, sub, p-1, s)].Not())
+                            
+# Subjects must to be teached done in 1 Session
+for s in range(1,Session+1):
+    for c in class_sub:
+        subject = class_sub[c]
+        for sub in subject:
+            teach = model.NewBoolVar('t')  
+
+            sub_pe = sum(Schedule[(t, c, sub, p, s)] 
+            for p in range(1, Period+1) for t in teacher if sub in teacher[t])
+
+            model.Add( sub_pe == period_sub[sub]).OnlyEnforceIf(teach)
+
+            model.Add(sub_pe == 0).OnlyEnforceIf(teach.Not())
+
+
+# Objective function
+model.Maximize(sum(Schedule[(t, c, sub, p, s)] for t in teacher for sub in teacher[t] 
+for c in class_sub if sub in class_sub[c] for p in range(1,Period+1) for s in range(1,Session+1)))
 
 # Solver
 solver = cp_model.CpSolver()
-start_time = time.time()
 status = solver.Solve(model)
-end_time = time.time()
+
+count = 0
+sol =[]
+
+def Solution(c,s,sub,t):
+    global count
+    for p in range(1, Period + 1):
+        
+        if solver.Value(Schedule[(t, c, sub, p, s)]):
+                                    
+                                    count += 1
+                                    return [c,sub,p+(s-1)*6,t]
+    return None
+
 if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
     for s in range(1, Session+1):
-                print('Session ' + str(s))
-                print('-'*70)
-                for t in teacher:
-                    
-                    for c in class_sub:
-                        
-                        for sub in teacher[t]:
+        for c in class_sub:
+            for sub in class_sub[c]:
+                for t in teacher :
+                    if sub in teacher[t]:
+                        x = Solution(c,s,sub,t)
+                        if x != None:
+                            sol.append(x)
                 
-                            for p in range(1, Period + 1):
-                        
-                    
-                                if solver.Value(Schedule[(t, c, sub, p, s)]):
-                                    
-                                    
-                                    print('Teacher ' + str(t) + ' teach class ' +
-                                          str(c) + ' the subject ' + str(sub) + ' at period ' + str(p))
-                print('-'*70)
-                                    
-                    
-    print()
 else:
     print('No solution found.')
 
-print('\nStatistics')
-print('  - conflicts      : %i' % solver.NumConflicts())
-print('  - branches       : %i' % solver.NumBranches())
-print('  - wall time      : %f s' % solver.WallTime())
+def PrintSolution():
+    print(count)
+    for x in sol:
+        for i in x:
+            print(i,end=' ')
+        print()
 
-elapsed_time = end_time - start_time
-print('-'*70)
-print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
-'''
-3 3 8
-1 2 3 4 5 6 7 8 0
-1 2 3 4 5 6 7 8 0
-1 2 3 4 5 6 7 8 0
-1 5 0
-2 3 4 0
-6 7 8 0
-2 3 2 2 3 2 2 8
-'''
+PrintSolution()

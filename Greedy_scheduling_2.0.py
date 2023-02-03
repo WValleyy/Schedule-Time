@@ -23,7 +23,9 @@ for c in class_sub:
         C.append((sub,c,p)) #containing subject-class tuples
         
 C= sorted(C, key = lambda x: x[2],reverse = True)
-
+teacher_queue = PriorityQueue()
+for t in teacher:
+    teacher_queue.put((0,t,[0 for sessons in range(11)]))
 
 
 def select(name_teacher,classes_teacher):
@@ -60,9 +62,7 @@ def select2(name_teacher,classes_teacher):
 def Greedy():
     global C
     S = []
-    teacher_queue = PriorityQueue()
-    for t in teacher:
-        teacher_queue.put((0,t,[0 for sessons in range(11)]))# start classes for teacher in each session
+    # start classes for teacher in each session
     # start classes for room in each session
     
     while len(C)>0:
@@ -86,6 +86,8 @@ def Greedy():
                 #temp.append((t[0]+x[3],t[1],c_t))
             temp.append((t[0]+x[2],t[1],c_t))
         if check==temp:
+            for t in temp:
+                teacher_queue.put(t) 
             return S
         for t in temp:
             teacher_queue.put(t) 
@@ -95,9 +97,7 @@ def Greedy():
 def improvedGreedy():
     global C
     S = []
-    teacher_queue = PriorityQueue()
-    for t in teacher:
-        teacher_queue.put((0,t,[0 for sessons in range(11)]))# start classes for teacher in each session
+# start classes for teacher in each session
     # start classes for room in each session
     
     while len(C)>0:
@@ -130,9 +130,14 @@ def improvedGreedy():
     return S
 
 S1 = Greedy()
-#S2 = improvedGreedy()
-S=S1
+S2 = improvedGreedy()
+S=[]
+print(S1)
+print(S2)
+S=S1+S2
 S.sort()
+print('----------------------------------------------------------------')
+print(S)
 with open('data.txt','w') as f:
     
     f.write(str(len(S))+'\n')

@@ -22,7 +22,8 @@ for c in class_sub:
         p = period_sub[sub]
         C.append((sub,c,p)) #containing subject-class tuples
         
-C= sorted(C, key = lambda x: x[2],reverse = True)
+C= sorted(C, key = lambda x: x[2] and x[1] ,reverse=True)
+print(C)
 teacher_queue = PriorityQueue()
 for t in teacher:
     teacher_queue.put((0,t,[0 for sessons in range(11)]))
@@ -132,12 +133,11 @@ def improvedGreedy():
 S1 = Greedy()
 S2 = improvedGreedy()
 S=[]
-print(S1)
-print(S2)
+
 S=S1+S2
 S.sort()
 print('----------------------------------------------------------------')
-print(S)
+print(len(S))
 with open('data.txt','w') as f:
     
     f.write(str(len(S))+'\n')

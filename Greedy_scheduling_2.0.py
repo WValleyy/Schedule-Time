@@ -4,7 +4,7 @@ import sys
 teacher= {}
 class_sub = {}
 period_sub = {}
-[T, N, M] = [int(x) for x in sys.stdin.readline().split()]
+[T, N, M] = [int(x) for x in sys.stdin.readline().split()] # number of teacher,class,subject
 for i in range(1, N+1):
         class_sub[i] ={int(x) for x in sys.stdin.readline().split()[:-1]}
 for j in range(N+1, T+N+1):
@@ -28,7 +28,7 @@ teacher_queue = PriorityQueue()
 for t in teacher:
     teacher_queue.put((0,t,[0 for sessons in range(11)]))
 
-
+# provide continuous classes for teacher and classes that sastify the conditions
 def select(name_teacher,classes_teacher):
     global C
     for y in C:
@@ -44,6 +44,7 @@ def select(name_teacher,classes_teacher):
     #print('cant select s-c for teacher',t,candidates)
 
     return None,None,None
+# provide classes for teacher and classes that satisfy the conditions
 def select2(name_teacher,classes_teacher):
     global C
     for y in C:

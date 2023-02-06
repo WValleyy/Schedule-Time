@@ -23,6 +23,12 @@ for sub in range(1,M+1):
         if sub in teacher[t]:
             course[sub].append(t) 
 
+print(class_sub)
+print(teacher)
+period_sub.insert(0,0)
+print(period_sub)
+print(course)
+
 #Using greedy1 to make a feasible initial solution
 #Construct list of C and priority
 C = []
@@ -99,11 +105,13 @@ def initialize():
     
     for (c,sub,p,t) in s:
         schedule.append([sub,c,t,p//6 +1,p%6,p%6 + period_sub[sub]])
+        #schedule.append([sub,c,0,0,0,0])
         cs.remove((c,sub))
     for (c,s) in cs:
         schedule.append([s,c,0,0,0,0])
     return schedule
 init_solution = initialize()
+print(init_solution)
 
 def condition_check(schedule):
     #check overlap conditions
@@ -125,75 +133,58 @@ def fitness_function(schedule): #number of class-sub assigned
     evaluate = 0
     for x in schedule:
         if x[2] != 0:
-            #evaluate += period_sub[x[0]]
             evaluate +=1
     return evaluate
 
 def neighborhood(schedule): #to list all posstible moves
-    #but haven't finished yet :3
+    #if has no violations -> append to nbhood list
     nbhood = []
     temp = copy.deepcopy(schedule)
-    
-    for i in range(len(schedule)):
-        # drop some class
-        if schedule[i][2] != 0:
-            t = temp[i][:]
+
+    for i in range(len(temp)):
+        if temp[i][2] != 0:
             x = temp[i]
+            t = temp[i][:]
+            #change in position
+            for start in range(1,temp[i][4]):
+                x[4] = start
+                x[5] = start + period_sub[temp[i][0]] 
+                if condition_check(temp) == 0:
+                    nbhood.append(copy.deepcopy(temp))
+
+            for start in range(temp[i][4]+1,8-period_sub[temp[i][0]]):
+                x[4] = start
+                x[5] = start + period_sub[temp[i][0]] 
+                if condition_check(temp) == 0:
+                    nbhood.append(copy.deepcopy(temp))
+            # drop some assigned classes
             x[2] = 0
             x[3] = 0
             x[4] = 0
             x[5] = 0
             nbhood.append(copy.deepcopy(temp))
             temp[i] = t
-    
+            # move some assigned classes in their blocks (change starting points)
+            
+
+        else: # assign some classes
+            for part in range(1,11):
+                for start in range(1,7):
+                    t = temp[i][:]
+                    x = temp[i]
+                    for teach in course[temp[i][0]]:
+                        x[2] = teach
+                        x[3] = part
+                        x[4] = start
+                        x[5] = start + period_sub[temp[i][0]] 
+                        if condition_check(temp) == 0:
+                            
+                            nbhood.append(copy.deepcopy(temp))
+                    temp[i] = t
     return nbhood
 
-
-def neighbor(schedule):
-    #select randomly an sub-class in the time-table
-    #and make an random move
-    index = random.randrange(len(schedule))
-    temp = copy.deepcopy(schedule)
-    x = temp[index]
-    if x[2] == 0:
-        if len(course[x[0]])==0:
-            return temp
-        teacher = random.choice(course[x[0]])
-        part = random.randrange(1,11)
-        start = random.randrange(1,7-period_sub[x[0]]+1)
-        end = start + period_sub[x[0]]
-        x[2] = teacher
-        x[3] = part
-        x[4] = start
-        x[5] = end
-        return temp
-    y = random.randrange(2,5)
-    if y == 2:
-        #change teacher
-        x[2] = random.randrange(0,T+1)
-        if x[2] == 0:
-            x[3] = 0
-            x[4] = 0
-            x[5] = 0
-            return temp
-    elif y == 3:
-        #change part
-        x[3] = random.randrange(1,11)
-    elif y == 4:
-        start = random.randrange(1,7-period_sub[x[0]]+1)
-        x[5] = x[4] + period_sub[x[0]]
-    return temp
-
 def select_random_neighbor(schedule):
-    temp = copy.deepcopy(schedule)
-    for i in range(100):
-        nb = neighbor(temp)
-        if condition_check(nb) == 0:
-            return nb
-    i = random.randrange(len(temp))
-    for j in range(2,len(temp[i])):
-        temp[i][j] = 0
-    return temp
+    return random.choice(neighborhood(schedule))
 
 
 def simulated_annealing(schedule, temperature):
@@ -202,8 +193,8 @@ def simulated_annealing(schedule, temperature):
     best_fitness = fitness_function(current)
     record_best_fit = list()
     n = 1#count solution accepted
-    for i in range(100):
-        for j in range(10):
+    for i in range(50):
+        for j in range(20):
             nb = select_random_neighbor(current)
             current = nb
             current_fitness = fitness_function(current)
@@ -219,14 +210,13 @@ def simulated_annealing(schedule, temperature):
                     accept = False
             else:
                 accept = True
-
             if accept == True:
                 best_solution = copy.deepcopy(current)
                 best_fitness = fitness_function(best_solution)
                 record_best_fit.append(best_fitness)
                 n += 1
                 #print("small iteration:{}, best solution:{}, best fitness:{}".format(j, best_solution, best_fitness))
-        #print("iteration:{}, best solution:{}, best fitness:{}".format(i, best_solution, best_fitness))
+        print("iteration:{}, best solution:{}, best fitness:{}".format(i, best_solution, best_fitness))
         record_best_fit.append(best_fitness)
         temperature = temperature/(1+i)
     return best_solution
@@ -235,14 +225,3 @@ solution = simulated_annealing(init_solution, 100)
 print(fitness_function(init_solution))
 print(fitness_function(solution))
 
-count = 0
-for x in solution:
-    if x[2] != 0:
-        count+=1
-
-with open("outp.txt", "w") as f:
-    f.write(str(count)+'\n')
-    for x in solution:
-        if x[2] != 0:
-            f.write(str(x[1])+' '+str(x[0])+' '+str(6*(x[3]-1)+x[4])+' '+str(x[2])+'\n')
-        

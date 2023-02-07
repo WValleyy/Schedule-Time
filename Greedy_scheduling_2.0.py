@@ -4,6 +4,8 @@ import sys
 teacher= {}
 class_sub = {}
 period_sub = {}
+period = 6
+session = 10
 [T, N, M] = [int(x) for x in sys.stdin.readline().split()]
 for i in range(1, N+1):
         class_sub[i] ={int(x) for x in sys.stdin.readline().split()[:-1]}
@@ -13,28 +15,28 @@ period_sub = [int(x) for x in sys.stdin.readline().split()]
 period_sub.insert(0,0)
 
 #Construct list of Sub-class
-C = []
-mark = [[0 for sessons in range(11)] for room in range(N+1)]
+C_s_p = [] #list of class_subject_periods
+mark = [[0 for sessons in range(session+1)] for room in range(N+1)]
 # Mark is the timetable for all class each is built by the start period of each sessons
 for c in class_sub:
     for sub in class_sub[c]:
         p = period_sub[sub]
-        C.append((sub,c,p)) #Containing subject-class-period in a list
+        C_s_p.append((sub,c,p)) #Containing subject-class-period in a list
         
-C= sorted(C, key = lambda x: x[2],reverse = True)
+C_s_p= sorted(C_s_p, key = lambda x: x[2],reverse = True)
 teacher_queue = PriorityQueue() # construct teacher PriorityQueue
 for t in teacher:
-    teacher_queue.put((0,t,[0 for sessons in range(11)])) 
+    teacher_queue.put((0,t,[0 for sessons in range(session+1)])) 
     # Containing number of periods that teacher teach, name, timetable for that teacher
     # Timetable for teacher is built by the start period of each sessons 
 def select(name_teacher,classes_teacher):
     # Select the first sub-class that satisfies the condition and the start period of 
     # classes and teacher must be the same
-    global C
-    for y in C:
+    global C_s_p
+    for y in C_s_p:
 
         if (y[0] in teacher[name_teacher]):
-            for i in range(1,11):
+            for i in range(1,session+1):
                  if (mark[y[1]][i]+y[2]<=6) and (classes_teacher[i]+y[2]<=6) and mark[y[1]][i] == classes_teacher[i]:
 
                      mark[y[1]][i] = mark[y[1]][i]+y[2]
@@ -46,11 +48,11 @@ def select(name_teacher,classes_teacher):
 def select2(name_teacher,classes_teacher):
     # Select the first sub-class that satisfies the condition and the start period of 
     # classes and teacher must be the same
-    global C
-    for y in C:
+    global C_s_p
+    for y in C_s_p:
 
         if (y[0] in teacher[name_teacher]):
-            for i in range(1,11):
+            for i in range(1,session+1):
                  if (mark[y[1]][i]+y[2]<=6) and (classes_teacher[i]+y[2]<=6) :
                     if mark[y[1]][i] >= classes_teacher[i]:
                         classes_teacher[i] = mark[y[1]][i]+y[2]
@@ -62,12 +64,12 @@ def select2(name_teacher,classes_teacher):
                 
     return None,None,None  
 def Greedy():
-    global C
-    S = [] # list of sastify class - sub - start classes - teacher
+    global C_s_p
+    Class_sub_sastify = [] # list of sastify class - sub - start classes - teacher
     # start classes for teacher in each session
     # start classes for room in each session
     
-    while len(C)>0:
+    while len(C_s_p)>0:
         temp = [] # remember the updated teacher
         check=[] #teacher that has already checked
         while not teacher_queue.empty():
@@ -79,25 +81,25 @@ def Greedy():
             if x==None:
                 temp.append(t)
                 continue 
-            S.append((x[1],x[0],s[0]+6*(s[1]-1),t[1]))
-            C.remove(x)                
+            Class_sub_sastify.append((x[1],x[0],s[0]+6*(s[1]-1),t[1]))
+            C_s_p.remove(x)                
             temp.append((t[0]+x[2],t[1],c_t))
         if check==temp: # no more changes on teacher that can teach 
             for t in temp:
                 teacher_queue.put(t) # update the teacher queue for improvedGreedy
-            return S
+            return Class_sub_sastify
         for t in temp:
             teacher_queue.put(t) # update the teacher queue for next iteration
      
-    return S
+    return Class_sub_sastify
 
 def improvedGreedy():
-    global C
-    S = [] # list of sastify class - sub - start classes - teacher
+    global C_s_p
+    Class_sub_sastify = [] # list of sastify class - sub - start classes - teacher
     # start classes for teacher in each session
     # start classes for room in each session
     
-    while len(C)>0:
+    while len(C_s_p)>0:
          # mark classes that have already scheduled (in current iteration)
         temp = []
         check=[]
@@ -112,28 +114,28 @@ def improvedGreedy():
                 temp.append(t)
 
                 continue 
-            S.append((x[1],x[0],s[0]+6*(s[1]-1),t[1]))
+            Class_sub_sastify.append((x[1],x[0],s[0]+6*(s[1]-1),t[1]))
 
-            C.remove(x)
+            C_s_p.remove(x)
             temp.append((t[0]+x[2],t[1],c_t))
         if check==temp:
-            return S
+            return Class_sub_sastify
         for t in temp:
             teacher_queue.put(t) 
      
-    return S
+    return Class_sub_sastify
 
 S1 = Greedy()
 S2 = improvedGreedy()
-S=[]
-S=S1+S2
-S.sort()
+Schedual=[]
+Schedual=S1+S2
+Schedual.sort()
 print('----------------------------------------------------------------')
-print(S)
+print(Schedual)
 with open('data.txt','w') as f:
     
-    f.write(str(len(S))+'\n')
-    for i in S:
+    f.write(str(len(Schedual))+'\n')
+    for i in Schedual:
         for v in i:
             f.write(str(v)+" ")
         f.write('\n')

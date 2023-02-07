@@ -39,10 +39,10 @@ def select(name_teacher,classes_teacher):
             for i in range(1,session+1):
                  if (mark[y[1]][i]+y[2]<=6) and (classes_teacher[i]+y[2]<=6) and mark[y[1]][i] == classes_teacher[i]:
 
-                     mark[y[1]][i] = mark[y[1]][i]+y[2]
+                     mark[y[1]][i] = mark[y[1]][i]+y[2] #update start periods classes 
                      classes_teacher[i] = classes_teacher[i]+y[2]
 
-                     return y,(mark[y[1]][i]-y[2]+1,i),classes_teacher
+                     return y,(mark[y[1]][i]-y[2]+1,i),classes_teacher # teacher, start period, teacher_period
     return None,None,None
 
 def select2(name_teacher,classes_teacher):
@@ -60,7 +60,7 @@ def select2(name_teacher,classes_teacher):
                     else:
                         mark[y[1]][i] = classes_teacher[i]+y[2]
                         classes_teacher[i] = classes_teacher[i]+y[2]
-                    return y,(mark[y[1]][i]-y[2]+1,i),classes_teacher  
+                    return y,(mark[y[1]][i]-y[2]+1,i),classes_teacher  # teacher, start period, teacher_period
                 
     return None,None,None  
 def Greedy():
@@ -83,7 +83,7 @@ def Greedy():
                 continue 
             Class_sub_sastify.append((x[1],x[0],s[0]+6*(s[1]-1),t[1]))
             C_s_p.remove(x)                
-            temp.append((t[0]+x[2],t[1],c_t))
+            temp.append((t[0]+x[2],t[1],c_t)) #update teacher_period
         if check==temp: # no more changes on teacher that can teach 
             for t in temp:
                 teacher_queue.put(t) # update the teacher queue for improvedGreedy
@@ -114,14 +114,14 @@ def improvedGreedy():
                 temp.append(t)
 
                 continue 
-            Class_sub_sastify.append((x[1],x[0],s[0]+6*(s[1]-1),t[1]))
+            Class_sub_sastify.append((x[1],x[0],s[0]+6*(s[1]-1),t[1])) # put solution in list
 
             C_s_p.remove(x)
-            temp.append((t[0]+x[2],t[1],c_t))
-        if check==temp:
+            temp.append((t[0]+x[2],t[1],c_t)) #update teacher_period
+        if check==temp: # no more change can make on teacher
             return Class_sub_sastify
         for t in temp:
-            teacher_queue.put(t) 
+            teacher_queue.put(t) #update teacher_queue for next interation
      
     return Class_sub_sastify
 

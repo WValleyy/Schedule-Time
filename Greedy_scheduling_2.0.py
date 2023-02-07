@@ -1,4 +1,4 @@
-from queue import PriorityQueue
+
 import sys
 # Create input
 teacher= {}
@@ -16,19 +16,20 @@ period_sub.insert(0,0)
 
 #Construct list of Sub-class
 C_s_p = [] #list of class_subject_periods
-mark = [[0 for sessons in range(session+1)] for room in range(N+1)]
-# Mark is the timetable for all class each is built by the start period of each sessons
+Timetable = [[0 for sessons in range(session+1)] for room in range(N+1)]
+# Timetable is the timetable for all class each is built by the start period of each sessons
 for c in class_sub:
     for sub in class_sub[c]:
         p = period_sub[sub]
         C_s_p.append((sub,c,p)) #Containing subject-class-period in a list
         
 C_s_p= sorted(C_s_p, key = lambda x: x[2],reverse = True)
-teacher_queue = PriorityQueue() # construct teacher PriorityQueue
+teacher_list = [] # construct teacher PriorityQueue
 for t in teacher:
-    teacher_queue.put((0,t,[0 for sessons in range(session+1)])) 
+    teacher_list.append((0,t,[0 for sessons in range(session+1)])) 
     # Containing number of periods that teacher teach, name, timetable for that teacher
     # Timetable for teacher is built by the start period of each sessons 
+    
 def select(name_teacher,classes_teacher):
     # Select the first sub-class that satisfies the condition and the start period of 
     # classes and teacher must be the same
@@ -37,12 +38,12 @@ def select(name_teacher,classes_teacher):
 
         if (y[0] in teacher[name_teacher]):
             for i in range(1,session+1):
-                 if (mark[y[1]][i]+y[2]<=6) and (classes_teacher[i]+y[2]<=6) and mark[y[1]][i] == classes_teacher[i]:
+                 if (Timetable[y[1]][i]+y[2]<=6) and (classes_teacher[i]+y[2]<=6) and Timetable[y[1]][i] == classes_teacher[i]:
 
-                     mark[y[1]][i] = mark[y[1]][i]+y[2] #update start periods classes 
+                     Timetable[y[1]][i] = Timetable[y[1]][i]+y[2] #update start periods classes 
                      classes_teacher[i] = classes_teacher[i]+y[2]
 
-                     return y,(mark[y[1]][i]-y[2]+1,i),classes_teacher # teacher, start period, teacher_period
+                     return y,(Timetable[y[1]][i]-y[2]+1,i),classes_teacher # teacher, start period, teacher_period
     return None,None,None
 
 def select2(name_teacher,classes_teacher):
@@ -53,16 +54,16 @@ def select2(name_teacher,classes_teacher):
 
         if (y[0] in teacher[name_teacher]):
             for i in range(1,session+1):
-                 if (mark[y[1]][i]+y[2]<=6) and (classes_teacher[i]+y[2]<=6) :
-                    if mark[y[1]][i] >= classes_teacher[i]:
-                        classes_teacher[i] = mark[y[1]][i]+y[2]
-                        mark[y[1]][i] = mark[y[1]][i]+y[2]
+                 if (Timetable[y[1]][i]+y[2]<=6) and (classes_teacher[i]+y[2]<=6) :
+                    if Timetable[y[1]][i] >= classes_teacher[i]:
+                        classes_teacher[i] = Timetable[y[1]][i]+y[2]
+                        Timetable[y[1]][i] = Timetable[y[1]][i]+y[2]
                     else:
-                        mark[y[1]][i] = classes_teacher[i]+y[2]
+                        Timetable[y[1]][i] = classes_teacher[i]+y[2]
                         classes_teacher[i] = classes_teacher[i]+y[2]
-                    return y,(mark[y[1]][i]-y[2]+1,i),classes_teacher  # teacher, start period, teacher_period
-                
+                    return y,(Timetable[y[1]][i]-y[2]+1,i),classes_teacher  # teacher, start period, teacher_period
     return None,None,None  
+
 def Greedy():
     global C_s_p
     Class_sub_sastify = [] # list of sastify class - sub - start classes - teacher
@@ -72,11 +73,9 @@ def Greedy():
     while len(C_s_p)>0:
         temp = [] # remember the updated teacher
         check=[] #teacher that has already checked
-        while not teacher_queue.empty():
-        
-            t = teacher_queue.get()
+        while not teacher_list == []:        
+            t = teacher_list.pop()
             check.append(t)
-        #print('run here',t[0],t[1])
             x,s,c_t = select(t[1],t[2])
             if x==None:
                 temp.append(t)
@@ -86,43 +85,35 @@ def Greedy():
             temp.append((t[0]+x[2],t[1],c_t)) #update teacher_period
         if check==temp: # no more changes on teacher that can teach 
             for t in temp:
-                teacher_queue.put(t) # update the teacher queue for improvedGreedy
+                teacher_list.append(t) # update the teacher queue for improvedGreedy
             return Class_sub_sastify
         for t in temp:
-            teacher_queue.put(t) # update the teacher queue for next iteration
-     
+            teacher_list.append(t) # update the teacher queue for next iteration     
     return Class_sub_sastify
 
 def improvedGreedy():
     global C_s_p
     Class_sub_sastify = [] # list of sastify class - sub - start classes - teacher
     # start classes for teacher in each session
-    # start classes for room in each session
-    
+    # start classes for room in each session    
     while len(C_s_p)>0:
-         # mark classes that have already scheduled (in current iteration)
+         # Timetable classes that have already scheduled (in current iteration)
         temp = []
         check=[]
-        while not teacher_queue.empty():
-        
-            t = teacher_queue.get()
-            check.append(t)
-        
+        while not teacher_list == []:        
+            t = teacher_list.pop()
+            check.append(t)        
             x,s,c_t = select2(t[1],t[2])
-
             if x==None:
                 temp.append(t)
-
                 continue 
-            Class_sub_sastify.append((x[1],x[0],s[0]+6*(s[1]-1),t[1])) # put solution in list
-
+            Class_sub_sastify.append((x[1],x[0],s[0]+6*(s[1]-1),t[1])) # append solution in list
             C_s_p.remove(x)
             temp.append((t[0]+x[2],t[1],c_t)) #update teacher_period
         if check==temp: # no more change can make on teacher
             return Class_sub_sastify
         for t in temp:
-            teacher_queue.put(t) #update teacher_queue for next interation
-     
+            teacher_list.append(t) #update teacher_list for next interation     
     return Class_sub_sastify
 
 S1 = Greedy()

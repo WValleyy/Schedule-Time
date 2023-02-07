@@ -65,19 +65,24 @@ for x in class_sub:
 # Each class-sub can learn max once time a week 
 for x in class_sub:
     subject = class_sub[x]
-    for y in subject:                
+    for y in subject:
+
         model.Add(sum(Schedule[(t, x, y, u, s)] 
         for s in range(1, Session+1) for u in range(1, Period+1)
         for t in teacher if y in teacher[t]) <= period_sub[y])
             
 
-# The periods of the class-subject must be adjacent
+# The periods of the class-subject must be adjacent and each class-subject learn full of periods
 for s in range(1, Session+1):   
     for t in teacher:
         cla_sub = cla_sub_teacher[t]
         for (x,y) in cla_sub:
                     pe = period_sub[y]
-                    
+                    teach = model.NewBoolVar('t')
+            
+                    model.Add(sum(Schedule[(t, x, y, u, s)] for u in range(1, Period+1)) == pe).OnlyEnforceIf(teach)
+                    model.Add(sum(Schedule[(t, x, y, u, s)] for u in range(1, Period+1)) == 0).OnlyEnforceIf(teach.Not())
+
                     model.Add(sum(Schedule[(t, x, y, u_, s)]
                             for u_ in range(1, 1+pe)) == pe).OnlyEnforceIf(Schedule[(t, x, y, 1, s)])
 
@@ -85,14 +90,6 @@ for s in range(1, Session+1):
                             model.Add(sum(Schedule[(t, x, y, u_, s)] 
                             for u_ in range(u,u+pe)) == pe).OnlyEnforceIf(Schedule[(t, x, y, u, s)],Schedule[(t, x, y, u-1, s)].Not())
                             
-# Each class-subject learn full or 0 period in each session                        
-for s in range(1, Session+1):
-    for t in teacher:
-        for (x,y) in cla_sub_teacher[t]:
-            pe = period_sub[y]
-            teach = model.NewBoolVar('t')
-            model.Add(sum(Schedule[(t, x, y, u, s)] for u in range(1, Period+1)) == pe).OnlyEnforceIf(teach)
-            model.Add(sum(Schedule[(t, x, y, u, s)] for u in range(1, Period+1)) == 0).OnlyEnforceIf(teach.Not())
 
 
 

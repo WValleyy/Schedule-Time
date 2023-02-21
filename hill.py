@@ -1,28 +1,24 @@
 import random
-import math
 import copy
-from queue import PriorityQueue
-# Create input
+import sys
 
+# Create input
 teacher= {}
 class_sub = {}
 period_sub = {}
-
-with open("data.txt", "r") as f:
-    lines = f.readlines()
-    T, N, M = [int(x) for x in lines[0].split()]
-    for i in range(1, N+1):
-        class_sub[i] =set(map(int,lines[i].split()[:-1]))
-    for j in range(N+1, T+N+1):
-        teacher[j-N] = set(map(int,lines[j].split()[:-1]))
-    period_sub = list(map(int,lines[T+N+1].split()))
-
+period = 6
+session = 10
+[T, N, M] = [int(x) for x in sys.stdin.readline().split()]
+for i in range(1, N+1):
+        class_sub[i] ={int(x) for x in sys.stdin.readline().split()[:-1]}
+for j in range(N+1, T+N+1):
+        teacher[j-N] = {int(x) for x in sys.stdin.readline().split()[:-1]}
+period_sub = [int(x) for x in sys.stdin.readline().split()]
 course = [[] for i in range(M+1)]
 for sub in range(1,M+1):
     for t in teacher:
         if sub in teacher[t]:
             course[sub].append(t) 
-
 period_sub.insert(0,0)
 
 def initialize():
@@ -101,22 +97,16 @@ def simple_hill_climbing(schedule):
             break
         current_fit = fitness_function(current)
         neighbor_fit = fitness_function(neighbor)
-        print('iteration',count,'best fitness',current_fit)
+        #print('iteration',count,'best fitness',current_fit)
     return current
 
-print('initial fitness',fitness_function(init_solution))
 solution = simple_hill_climbing(init_solution)
-
-print(fitness_function(solution))
 
 count = 0
 for x in solution:
     if x[2] != 0:
         count+=1
-
-with open("outp.txt", "w") as f:
-    f.write(str(count)+'\n')
-    for x in solution:
-        if x[2] != 0:
-            f.write(str(x[1])+' '+str(x[0])+' '+str(6*(x[3]-1)+x[4])+' '+str(x[2])+'\n')
-        
+print(count)
+for x in solution:
+    if x[2] != 0:
+        print(str(x[1])+' '+str(x[0])+' '+str(6*(x[3]-1)+x[4])+' '+str(x[2]))

@@ -1,31 +1,25 @@
 import random
 import math
 import copy
-from queue import PriorityQueue
-import time
-# Create input
+import sys
 
+# Create input
 teacher= {}
 class_sub = {}
 period_sub = {}
 period = 6
 session = 10
-
-with open("data12.txt", "r") as f:
-    lines = f.readlines()
-    T, N, M = [int(x) for x in lines[0].split()]
-    for i in range(1, N+1):
-        class_sub[i] =set(map(int,lines[i].split()[:-1]))
-    for j in range(N+1, T+N+1):
-        teacher[j-N] = set(map(int,lines[j].split()[:-1]))
-    period_sub = list(map(int,lines[T+N+1].split()))
-
+[T, N, M] = [int(x) for x in sys.stdin.readline().split()]
+for i in range(1, N+1):
+        class_sub[i] ={int(x) for x in sys.stdin.readline().split()[:-1]}
+for j in range(N+1, T+N+1):
+        teacher[j-N] = {int(x) for x in sys.stdin.readline().split()[:-1]}
+period_sub = [int(x) for x in sys.stdin.readline().split()]
 course = [[] for i in range(M+1)]
 for sub in range(1,M+1):
     for t in teacher:
         if sub in teacher[t]:
             course[sub].append(t) 
-
 period_sub.insert(0,0)
 
 def initialize():
@@ -177,33 +171,30 @@ def condition_check(schedule,part): #better O(n)
 
 def fitness_function(schedule): #number of class-sub assigned
     evaluate = 0
+    e = [0 for i in range(51)]
     for x in schedule:
         if x[2] != 0:
             evaluate += 1
+            e[x[3]] = e[x[3]] + 1
+    for i in range(1,51):
+        if e[i] >= 0.8*T:
+            evaluate += 1
+    return evaluate 
 
+def count_class(schedule):
+    evaluate = 0
+    for x in schedule:
+        if x[2] != 0:
+            evaluate += 1
     return evaluate 
 
 def neighborhood(schedule): #to list all posstible moves
     nbhood = []
     temp = copy.deepcopy(schedule)
-    count_sol = 0
     for i in range(len(temp)):
         if temp[i][2] != 0:
             x = temp[i]
             t = temp[i][:]
-            #change in position
-            # move some assigned classes in their blocks (change starting points)
-            '''
-            for start in range(1,8-period_sub[temp[i][0]]):
-                if start == temp[i][4]:
-                    continue
-                x[4] = start
-                x[5] = start + period_sub[temp[i][0]] 
-                if condition_check(temp,temp[i][3]):
-                    nbhood.append(('move',x[0],x[1],x[4]))
-
-            temp[i]=t
-            '''
             #drop
             nbhood.append(('drop',x[0],x[1]))
             temp[i] = t
@@ -218,7 +209,8 @@ def neighborhood(schedule): #to list all posstible moves
                         x[4] = start
                         x[5] = start + period_sub[temp[i][0]] 
                         if condition_check(temp,temp[i][3]):
-                            nbhood.append(('assign',x[0],x[1],teach,part,start,start + period_sub[temp[i][0]] ))
+                            nbhood.append(('assign',x[0],x[1],\
+                            teach,part,start,start + period_sub[temp[i][0]] ))
             temp[i] = t
     return nbhood
 
@@ -257,7 +249,7 @@ def simulated_annealing(schedule, temperature):
     record_best_fit = list()
     n = 1#count solution accepted
     for i in range(20):
-        for j in range(20):
+        for j in range(50):
             nb = select_random_neighbor(current)
             current = nb
             current_fitness = fitness_function(current)
@@ -278,22 +270,17 @@ def simulated_annealing(schedule, temperature):
                 best_fitness = fitness_function(best_solution)
                 record_best_fit.append(best_fitness)
                 n += 1
-                #print("small iteration:{}, best solution:{}, best fitness:{}".format(j, best_solution, best_fitness))
-        print("iteration:{}, best fitness:{}".format(i, best_fitness))
         record_best_fit.append(best_fitness)
         temperature = temperature/(1+i)
     return best_solution
 
-#init_solution1 = initialize()
-init_solution2 = initialize_greedy()
-print('initial fitness',fitness_function(init_solution2))
-
-time2 = time.time()
-solution2 = simulated_annealing(init_solution2, 100)
-time3 = time.time()
-#print('final fitness1', fitness_function(solution1))
-#print('running time 1',time2 - time1)
-print('final fitness2', fitness_function(solution2))
-print('running time 2',time3 - time2)
-
-
+init_solution = initialize_greedy()
+solution = simulated_annealing(init_solution, 100)
+count = 0
+for x in solution:
+    if x[2] != 0:
+        count+=1
+print(count)
+for x in solution:
+    if x[2] != 0:
+        print(str(x[1])+' '+str(x[0])+' '+str(6*(x[3]-1)+x[4])+' '+str(x[2]))
